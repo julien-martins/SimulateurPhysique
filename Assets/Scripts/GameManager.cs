@@ -19,8 +19,12 @@ public class GameManager : MonoBehaviour
     private Vector2 mouseScreenPos;
     
     private GameObject _platformToPlace;
+    
     private bool _joinSelectioned = false;
     private GameObject _joinSelectedObject;
+
+    private bool moveJoin = false;
+    private Join moveJoinObj;
     
     void Awake() {
         if(instance != null && instance != this)
@@ -33,13 +37,33 @@ public class GameManager : MonoBehaviour
     {
         mouseScreenPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        if (Input.GetMouseButtonDown(1) && _joinSelectioned)
+        if (Input.GetMouseButtonDown(1) )
         {
-            Destroy(_platformToPlace);
-            _joinSelectioned = false;
+            if (_joinSelectioned)
+            {
+                Destroy(_platformToPlace);
+                _joinSelectioned = false;
+            }
+            else
+            {
+                RaycastHit2D hit = Physics2D.Raycast(mouseScreenPos, Vector2.down);
+                if (hit.collider != null)
+                {
+                    if (hit.collider.CompareTag("Join"))
+                    {
+                        if (!hit.collider.gameObject.GetComponent<Join>().Fixed)
+                        {
+                            moveJoin = true;
+                            moveJoinObj = hit.collider.gameObject.GetComponent<Join>();
+                        }
+                    }
+                }
+            }
         }
-        
-        if (Input.GetMouseButtonDown(0))
+
+        if (Input.GetMouseButtonUp(1) && moveJoin) moveJoin = false;
+
+        if (Input.GetMouseButtonDown(0) && !moveJoin)
         {
             RaycastHit2D hit = Physics2D.Raycast(mouseScreenPos, Vector2.down);
             if(hit.collider != null)
@@ -62,6 +86,11 @@ public class GameManager : MonoBehaviour
                             hit.collider.gameObject.GetComponent<Join>();
                         Platform plat = _platformToPlace.GetComponent<Platform>();
                         _platformToPlace.transform.localScale = new Vector3(Vector2.Distance(plat.GetLeftAnchorPosition(), hit.collider.gameObject.transform.position), 0.3f, 0);
+                        
+                        //Add platform to the two joins
+                        hit.collider.gameObject.GetComponent<Join>().ConnectedPlatforms.Add(plat);
+                        _joinSelectedObject.GetComponent<Join>().ConnectedPlatforms.Add(plat);
+                        
                         _joinSelectioned = false;
                     }
 
@@ -82,7 +111,12 @@ public class GameManager : MonoBehaviour
                     joinScript.Fixed = false;
                     Platform plat = _platformToPlace.GetComponent<Platform>();
                     _platformToPlace.transform.localScale = new Vector3(Vector2.Distance(plat.GetLeftAnchorPosition(), joinObject.transform.position), 0.3f, 0);
-                    _platformToPlace.GetComponent<Platform>().RightAnchor = joinScript;
+                    plat.RightAnchor = joinScript;
+                    
+                    //Add platform to the two joins
+                    joinScript.ConnectedPlatforms.Add(plat);
+                    _joinSelectedObject.GetComponent<Join>().ConnectedPlatforms.Add(plat);
+                    
                     _joinSelectioned = false;
                 }
             }
@@ -102,6 +136,42 @@ public class GameManager : MonoBehaviour
             _platformToPlace.transform.rotation = Quaternion.Euler(0, 0, angle);
         }
 
+        if (moveJoin)
+        {
+            moveJoinObj.gameObject.transform.position = mouseScreenPos;
+            
+            //Move platform connected to the join
+            foreach (var platform in moveJoinObj.ConnectedPlatforms)
+            {
+                if (platform.RightAnchor == moveJoinObj)
+                {
+                    //Change scale with mouse
+                    platform.transform.localScale = new Vector3(Vector2.Distance(platform.GetLeftAnchorPosition(), mouseScreenPos), 0.3f, 0);
+
+                    //Change angle
+                    float angleRad = Mathf.Atan2(mouseScreenPos.y - platform.GetLeftAnchorPosition().y, mouseScreenPos.x - platform.GetLeftAnchorPosition().x);
+                    float angle = (180 / Mathf.PI) * angleRad;
+                    
+                    platform.transform.rotation = Quaternion.Euler(0, 0, angle);
+                }
+                else if (platform.LeftAnchor == moveJoinObj)
+                {
+                    platform.transform.position = moveJoinObj.transform.position;
+                    
+                    //Change scale with mouse
+                    platform.transform.localScale = new Vector3(Vector2.Distance(platform.GetLeftAnchorPosition(), platform.GetRightAnchorPosition()), 0.3f, 0);
+                    
+                    //Change angle
+                    float angleRad = Mathf.Atan2(platform.GetRightAnchorPosition().y - platform.GetLeftAnchorPosition().y, platform.GetRightAnchorPosition().x - platform.GetLeftAnchorPosition().x);
+                    float angle = (180 / Mathf.PI) * angleRad;
+                    
+                    platform.transform.rotation = Quaternion.Euler(0, 0, angle);
+                }
+                
+            }
+            
+        }
+        
     }
 
     public void ClearBridge()
