@@ -20,6 +20,8 @@ public class GameManager : MonoBehaviour
     
     public float ConstanteRappel = 0.01f;
     public float Gravity = 1.5f;
+    public float Absorption = 0.4f;
+    public float SpeedScale = 2f;
     
     private Vector2 mouseScreenPos;
     
@@ -57,7 +59,8 @@ public class GameManager : MonoBehaviour
         mouseScreenPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
         if(Input.GetKeyDown(KeyCode.Space)) TogglePhysics();
-        
+        if(Input.GetKeyDown(KeyCode.Escape)) ReturnInitialState();
+
         if (Input.GetMouseButtonDown(1))
         {
             if (_joinSelectioned)
@@ -136,8 +139,9 @@ public class GameManager : MonoBehaviour
                     _allJoins.Add(joinScript);
                     joinScript.Fixed = false;
                     Platform plat = _platformToPlace.GetComponent<Platform>();
+                    plat.RestWidth = Vector2.Distance(plat.GetLeftAnchorPosition(), joinObject.transform.position);
                     _platformToPlace.transform.localScale = new Vector3(
-                        Vector2.Distance(plat.GetLeftAnchorPosition(), joinObject.transform.position), 0.3f, 0);
+                        plat.RestWidth, 0.3f, 0);
                     plat.RightAnchor = joinScript;
 
                     //Add platform to the two joins
@@ -154,8 +158,9 @@ public class GameManager : MonoBehaviour
             Debug.Log("Update temporary platform");
             Platform plat = _platformToPlace.GetComponent<Platform>();
             //Change scale with mouse
+            plat.RestWidth = Vector2.Distance(plat.GetLeftAnchorPosition(), mouseScreenPos);
             _platformToPlace.transform.localScale =
-                new Vector3(Vector2.Distance(plat.GetLeftAnchorPosition(), mouseScreenPos), 0.3f, 0);
+                new Vector3(plat.RestWidth, 0.3f, 0);
 
             //Change angle
             float angleRad = Mathf.Atan2(mouseScreenPos.y - plat.GetLeftAnchorPosition().y,
@@ -230,12 +235,14 @@ public class GameManager : MonoBehaviour
         foreach (Join join in _allJoins)
         {   
             //Force Gravite
-            join.Speed += Time.deltaTime * Vector3.down * 2.0f;
+            Vector3 gravityForce = Vector3.down * Gravity;
             
             //Force elastique
             Vector3 sumElasticForce = Vector3.zero;
             foreach(Platform platform in join.ConnectedPlatforms)
             {
+                platform.Width = Vector2.Distance(platform.GetLeftAnchorPosition(), platform.GetRightAnchorPosition());
+                
                 Vector3 dir = Vector3.zero;
                 if (platform.LeftAnchor == join)
                 {
@@ -247,24 +254,40 @@ public class GameManager : MonoBehaviour
                 }
                 
                 //Change the color of the platform 
-                float force = -ConstanteRappel * (platform.Width - platform.RestWidth);
+                float force = -ConstanteRappel * ( platform.Width - platform.RestWidth );
                 Debug.Log(force);
                 
-                if(Math.Abs(force) > 1.8f) Debug.Log("Change Color");
+                if(Math.Abs(force) > 0.3f) platform.Sprite.color = Color.red;
+                else if(Math.Abs(force) > 0.2f) platform.Sprite.color = new Color(255.0f / 255, 127.0f / 255, 39.0f / 255);
+                else if (Math.Abs(force) > 0.1f) platform.Sprite.color = Color.yellow;
+                else platform.Sprite.color = Color.white;
                 
-                platform.Sprite.color = new Color(255, 127, 39);
                 
                 
                 sumElasticForce += force * dir;
             }
 
-            join.Speed += sumElasticForce * Time.fixedDeltaTime;
+            join.Speed += (sumElasticForce + gravityForce) * Time.fixedDeltaTime * SpeedScale;
+            join.Speed *= Absorption;
             
             //Update Platform link to the join
             UpdatePlatformConnectedToJoin(join);
 
-            join.transform.position += join.Speed * Time.fixedDeltaTime / 20;
+            join.transform.position += join.Speed;
         }
+    }
+
+    public void ReturnInitialState()
+    {
+        _simulatePhysics = false;
+        
+        foreach (Join join in _allJoins)
+        {
+            join.transform.position = join.PositionInitial;
+            join.Speed = Vector3.zero;
+            UpdatePlatformConnectedToJoin(join);
+        }
+        
     }
     
 }

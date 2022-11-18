@@ -7,7 +7,7 @@ public class Platform : MonoBehaviour
     public Join LeftAnchor { get; set; }
     public Join RightAnchor { get; set; }
 
-    public float RestWidth = 0;
+    public float RestWidth = -1;
     public float Width = 0;
     
     public float DistanceMin = 100;
