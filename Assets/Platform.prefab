@@ -129,3 +129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b712db718af3b6e4e8c83acbc9854f15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  RestWidth: 0
+  Width: 0
+  DistanceMin: 100
+  Sprite: {fileID: 2994382583712354794}

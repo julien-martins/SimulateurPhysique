@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Join
   - Platform
+  - UI
   layers:
   - Default
   - TransparentFX

@@ -6,7 +6,16 @@ public class Join : MonoBehaviour
 {
     public bool Fixed = true;
 
+    public Vector3 Speed = Vector3.zero;
+    
     public List<Platform> ConnectedPlatforms = new();
+
+    public Vector3 PositionInitial = Vector3.zero;
+
+    void Start()
+    {
+        PositionInitial = transform.position;
+    }
     
     void Update()
     {
