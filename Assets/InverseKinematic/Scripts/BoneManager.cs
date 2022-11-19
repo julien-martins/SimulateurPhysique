@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -23,6 +24,7 @@ public class BoneManager : MonoBehaviour
     private Bone _selectionBone;
 
     private bool _moveSelectionBone;
+    private bool _moveSelectionIKBone;
     
     // Start is called before the first frame update
     void Start()
@@ -81,7 +83,7 @@ public class BoneManager : MonoBehaviour
             
         }
 
-        if (_selectionType != SelectionType.None && _moveSelectionBone && Input.GetMouseButtonDown(0))
+        if (_selectionType != SelectionType.None && (_moveSelectionBone || _moveSelectionIKBone) && Input.GetMouseButtonDown(0))
         {
             ResetSelection();
         }
@@ -91,6 +93,11 @@ public class BoneManager : MonoBehaviour
         {
             _moveSelectionBone = true;
         }
+
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            _moveSelectionIKBone = true;
+        }
         
         //Extend Input
         if ((_selectionType == SelectionType.Head || _selectionType == SelectionType.Tail) &&
@@ -98,9 +105,36 @@ public class BoneManager : MonoBehaviour
         {
             ExtendBone();
         }
+
+        if (_moveSelectionIKBone)
+        {
+            ReachTarget(_selectionBone, _mouseScreenPos);
+        }
         
     }
 
+    void ReachTarget(Bone bone, Vector2 target)
+    {
+        
+        //Calculate the current length
+        var c_dx = bone.Tail.position.x - bone.Head.position.x;
+        var c_dy = bone.Tail.position.y - bone.Head.position.y;
+        var c_dist = Math.Sqrt(c_dx * c_dx + c_dy * c_dy);
+
+        //Calculate the stretched length
+        var s_dx = bone.Head.position.x - target.x;
+        var s_dy = bone.Head.position.y - target.y;
+        var s_dist = Math.Sqrt(s_dx * s_dx + s_dy * s_dy);
+        
+        //Calculate how much to scale the stretched line
+        var scale = c_dist / s_dist;
+
+        bone.Tail.position = new Vector3(target.x, target.y, 0);
+        bone.Head.position = new Vector3((float)(target.x + s_dx * scale), (float)(target.y + s_dy * scale), 0);
+        
+        bone.UpdateBody();
+    }
+    
     void ExtendBone()
     {
         Bone bone;
@@ -123,11 +157,14 @@ public class BoneManager : MonoBehaviour
         _selectionBone.Select(_selectionType);
         
         _moveSelectionBone = true;
+        
+        _selectionBone.UpdateBody();
     }
     
     void ResetSelection()
     {
         _moveSelectionBone = false;
+        _moveSelectionIKBone = false;
     }
     
 }

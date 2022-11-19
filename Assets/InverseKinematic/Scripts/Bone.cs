@@ -80,7 +80,7 @@ public class Bone : MonoBehaviour
         UpdateBody();
     }
 
-    void UpdateBody()
+    public void UpdateBody()
     {
         Body.position = Head.position;
         float dist = Vector2.Distance(Head.position, Tail.position);
