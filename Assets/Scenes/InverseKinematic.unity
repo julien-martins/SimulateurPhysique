@@ -168,6 +168,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   CameraMain: {fileID: 512467623}
+  BonePrefab: {fileID: 4609421677282799952, guid: 956c07e1817345b4190d81844c600fda, type: 3}
 --- !u!1 &512467621
 GameObject:
   m_ObjectHideFlags: 0

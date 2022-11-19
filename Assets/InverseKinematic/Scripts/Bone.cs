@@ -53,6 +53,13 @@ public class Bone : MonoBehaviour
         }
     }
 
+    public void Deselect()
+    {
+        TailSprite.color = Color.white;
+        BodySprite.color = Color.white;
+        HeadSprite.color = Color.white;
+    }
+
     public void MoveSelection(BoneManager.SelectionType type, Vector3 deltaPos)
     {
         switch (type)

@@ -14,6 +14,8 @@ public class BoneManager : MonoBehaviour
     
     public Camera CameraMain;
 
+    public Bone BonePrefab;
+    
     private Vector2 _oldMouseScreenPos;
     private Vector2 _mouseScreenPos;
 
@@ -56,6 +58,8 @@ public class BoneManager : MonoBehaviour
             RaycastHit2D hit = Physics2D.Raycast(_mouseScreenPos, Vector2.zero);
             if (hit.collider)
             {
+                if(_selectionBone)
+                    _selectionBone.Deselect();
                 _selectionBone = hit.collider.gameObject.GetComponentInParent<Bone>();
                 
                 if (hit.collider.CompareTag("Head"))
@@ -82,14 +86,45 @@ public class BoneManager : MonoBehaviour
             ResetSelection();
         }
         
+        //Move Input
         if (Input.GetKeyDown(KeyCode.G))
         {
             _moveSelectionBone = true;
         }
         
+        //Extend Input
+        if ((_selectionType == SelectionType.Head || _selectionType == SelectionType.Tail) &&
+            Input.GetKeyDown(KeyCode.E))
+        {
+            ExtendBone();
+        }
         
     }
 
+    void ExtendBone()
+    {
+        Bone bone;
+        if (_selectionType == SelectionType.Head)
+        {
+            bone = Instantiate(BonePrefab, _selectionBone.Head.transform);
+        }
+        else
+        {
+            bone = Instantiate(BonePrefab, _selectionBone.Tail.transform);
+        }
+
+        _selectionBone.Deselect();
+        
+        bone.Head.gameObject.SetActive(false);
+
+        _selectionType = SelectionType.Tail;
+        _selectionBone = bone;
+        
+        _selectionBone.Select(_selectionType);
+        
+        _moveSelectionBone = true;
+    }
+    
     void ResetSelection()
     {
         _moveSelectionBone = false;
