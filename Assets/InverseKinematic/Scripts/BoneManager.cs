@@ -13,7 +13,8 @@ public class BoneManager : MonoBehaviour
     }
     
     public Camera CameraMain;
-    
+
+    private Vector2 _oldMouseScreenPos;
     private Vector2 _mouseScreenPos;
 
     private SelectionType _selectionType;
@@ -24,6 +25,9 @@ public class BoneManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        _oldMouseScreenPos = Vector2.zero;
+        _mouseScreenPos = Vector2.zero;
+        
         _selectionType = SelectionType.None;
         _selectionBone = null;
     }
@@ -35,19 +39,19 @@ public class BoneManager : MonoBehaviour
 
         if (_moveSelectionBone)
         {
-            Debug.Log("Move Bone");
-            Debug.Log(_selectionType);
-            _selectionBone.MoveSelection(_selectionType, _mouseScreenPos);
+            Vector3 deltaPos = _mouseScreenPos - _oldMouseScreenPos;
+            _selectionBone.MoveSelection(_selectionType, deltaPos);
         }
         
     }
 
     void HandleInput()
     {
+        _oldMouseScreenPos = _mouseScreenPos;
         _mouseScreenPos = CameraMain.ScreenToWorldPoint(Input.mousePosition);
         
         //Left click down
-        if (_selectionType == SelectionType.None && Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0))
         {
             RaycastHit2D hit = Physics2D.Raycast(_mouseScreenPos, Vector2.zero);
             if (hit.collider)
@@ -89,7 +93,6 @@ public class BoneManager : MonoBehaviour
     void ResetSelection()
     {
         _moveSelectionBone = false;
-        _selectionType = SelectionType.None;
     }
     
 }

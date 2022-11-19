@@ -15,6 +15,17 @@ public class Bone : MonoBehaviour
     public Transform Tail;
     public SpriteRenderer TailSprite;
 
+    private Vector3 initialHeadPos;
+    private Vector3 initialTailPos;
+    private Vector3 initialScale;
+
+    public void Start()
+    {
+        initialScale = Body.transform.localScale;
+        initialHeadPos = Head.position;
+        initialTailPos = Tail.position;
+    }
+    
     public void Select(BoneManager.SelectionType type)
     {
         switch (type)
@@ -42,19 +53,20 @@ public class Bone : MonoBehaviour
         }
     }
 
-    public void MoveSelection(BoneManager.SelectionType type, Vector2 newPos)
+    public void MoveSelection(BoneManager.SelectionType type, Vector3 deltaPos)
     {
         switch (type)
         {
             case BoneManager.SelectionType.Head:
-                Head.position = newPos;
+                Head.position += deltaPos;
                 break;
             case BoneManager.SelectionType.Body:
-                Head.position = newPos;
-                Tail.position = newPos;
+                Head.position += deltaPos;
+                Tail.position += deltaPos;
+
                 break;
             case BoneManager.SelectionType.Tail:
-                Tail.position = newPos;
+                Tail.position += deltaPos;
                 break;
         }
         
@@ -64,7 +76,13 @@ public class Bone : MonoBehaviour
     void UpdateBody()
     {
         Body.position = Head.position;
-        Body.localScale = Vector2.Distance(Head.position, Tail.position);
+        float dist = Vector2.Distance(Head.position, Tail.position);
+        Body.localScale = new Vector3(dist + dist/7, dist/7, 0.0f);
+        
+        float angleRad = Mathf.Atan2(Tail.transform.position.y - Head.transform.position.y, Tail.transform.position.x - Head.transform.position.x);
+        float angle = (180 / Mathf.PI) * angleRad;
+                    
+        Body.transform.rotation = Quaternion.Euler(0, 0, angle);
     }
     
 }
