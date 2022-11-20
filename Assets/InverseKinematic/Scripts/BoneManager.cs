@@ -16,6 +16,10 @@ public class BoneManager : MonoBehaviour
     public Camera CameraMain;
 
     public Bone BonePrefab;
+
+    public Bone RootBone;
+
+    public Transform RootTransform;
     
     private Vector2 _oldMouseScreenPos;
     private Vector2 _mouseScreenPos;
@@ -25,7 +29,7 @@ public class BoneManager : MonoBehaviour
 
     private bool _moveSelectionBone;
     private bool _moveSelectionIKBone;
-    
+
     // Start is called before the first frame update
     void Start()
     {
@@ -108,14 +112,14 @@ public class BoneManager : MonoBehaviour
 
         if (_moveSelectionIKBone)
         {
-            ReachTarget(_selectionBone, _mouseScreenPos);
+            //if((_mouseScreenPos - _oldMouseScreenPos).magnitude > 0)
+            IKCalculation(_mouseScreenPos);
         }
         
     }
 
     void ReachTarget(Bone bone, Vector2 target)
     {
-        
         //Calculate the current length
         var c_dx = bone.Tail.position.x - bone.Head.position.x;
         var c_dy = bone.Tail.position.y - bone.Head.position.y;
@@ -125,7 +129,7 @@ public class BoneManager : MonoBehaviour
         var s_dx = bone.Head.position.x - target.x;
         var s_dy = bone.Head.position.y - target.y;
         var s_dist = Math.Sqrt(s_dx * s_dx + s_dy * s_dy);
-        
+
         //Calculate how much to scale the stretched line
         var scale = c_dist / s_dist;
 
@@ -134,22 +138,37 @@ public class BoneManager : MonoBehaviour
         
         bone.UpdateBody();
     }
+
+    void IKCalculation(Vector2 target)
+    {
+        Vector2 currentTarget = target;
+        
+        Bone currentBone = _selectionBone;
+        
+        while (currentBone)
+        {
+            ReachTarget(currentBone, currentTarget);
+
+            currentTarget = currentBone.Head.position;
+            currentBone = currentBone.Parent;
+            //if (currentBone && !currentBone.Parent) return;
+        }
+
+    }
     
     void ExtendBone()
     {
         Bone bone;
-        if (_selectionType == SelectionType.Head)
-        {
-            bone = Instantiate(BonePrefab, _selectionBone.Head.transform);
-        }
-        else
-        {
-            bone = Instantiate(BonePrefab, _selectionBone.Tail.transform);
-        }
+
+        bone = Instantiate(BonePrefab, RootTransform);
 
         _selectionBone.Deselect();
-        
+
+        _selectionBone.Child = bone;
         bone.Head.gameObject.SetActive(false);
+        bone.Head.position = _selectionBone.Tail.position;
+        bone.Tail.position = _mouseScreenPos;
+        bone.Parent = _selectionBone;
 
         _selectionType = SelectionType.Tail;
         _selectionBone = bone;

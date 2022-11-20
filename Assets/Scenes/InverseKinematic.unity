@@ -169,6 +169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CameraMain: {fileID: 512467623}
   BonePrefab: {fileID: 4609421677282799952, guid: 956c07e1817345b4190d81844c600fda, type: 3}
+  RootBone: {fileID: 1246519987}
 --- !u!1 &512467621
 GameObject:
   m_ObjectHideFlags: 0
@@ -402,6 +403,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6533952861964526850, guid: 956c07e1817345b4190d81844c600fda, type: 3}
   m_PrefabInstance: {fileID: 1077607133}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1246519987 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4609421677282799952, guid: 956c07e1817345b4190d81844c600fda, type: 3}
+  m_PrefabInstance: {fileID: 1077607133}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddfef23e6db105a4ea1e7c0ffea269bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1263725722
 GameObject:
   m_ObjectHideFlags: 0
