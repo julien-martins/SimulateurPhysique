@@ -5,7 +5,7 @@ using UnityEngine;
 public class Bone : MonoBehaviour
 {
     public Bone Parent;
-    public Bone Child;
+    public List<Bone> Child;
     
     public Transform Head;
     public SpriteRenderer HeadSprite;
@@ -22,6 +22,7 @@ public class Bone : MonoBehaviour
 
     public void Start()
     {
+        Child = new();
         initialScale = Body.transform.localScale;
         initialHeadPos = Head.position;
         initialTailPos = Tail.position;
@@ -68,29 +69,29 @@ public class Bone : MonoBehaviour
             case BoneManager.SelectionType.Head:
                 Head.position += deltaPos;
 
-                if (Child)
-                {
-                    Child.Tail.position += deltaPos;
-                    Child.UpdateBody();
-                }
-
                 break;
             case BoneManager.SelectionType.Body:
                 Head.position += deltaPos;
                 Tail.position += deltaPos;
 
-                if (Child)
+                if (Child.Count > 0)
                 {
-                    Child.MoveSelection(type, deltaPos);
+                    foreach (Bone child in Child)
+                    {
+                        child.MoveSelection(type, deltaPos);
+                    }
                 }
 
                 break;
             case BoneManager.SelectionType.Tail:
                 Tail.position += deltaPos;
 
-                if (Child){
-                    Child.Head.position += deltaPos;
-                Child.UpdateBody();
+                if (Child.Count > 0){
+                    foreach (Bone child in Child)
+                    {
+                        child.Head.position += deltaPos;
+                        child.UpdateBody();
+                    }
                 }
 
         break;

@@ -164,7 +164,7 @@ public class BoneManager : MonoBehaviour
 
         _selectionBone.Deselect();
 
-        _selectionBone.Child = bone;
+        _selectionBone.Child.Add(bone);
         bone.Head.gameObject.SetActive(false);
         bone.Head.position = _selectionBone.Tail.position;
         bone.Tail.position = _mouseScreenPos;
