@@ -1,0 +1,19 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct Sphere
+{
+    float3 pos;
+};
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<Sphere> Result;
+
+[numthreads(16,16,1)]
+void CSMain (uint id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+
+    Result[id].pos = float3(0.0f, 42.0f, 0.0f);
+}
