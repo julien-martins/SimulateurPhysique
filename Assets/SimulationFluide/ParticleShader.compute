@@ -5,10 +5,13 @@ struct GlobalVariable
 {
     float1 time;
     float1 density;
+    int numberOfParticles;
 };
 
 struct Particle
 {
+    float3 vel;
+    float3 acc;
     float3 pos;
     float1 mass;
 };
@@ -21,20 +24,92 @@ StructuredBuffer<GlobalVariable> _Global;
 
 RWStructuredBuffer<Particle> Result;
 
+void CheckCollision(uint id);
+float3 CalculateParticleForce(uint id, float time);
+float distance(float3 v1, float3 v2);
+
 [numthreads(128,1,1)]
 void CSMain (uint id : SV_DispatchThreadID)
 {
-    float3 actual_pos = Result[id].pos;
-    float3 new_pos = float3(actual_pos.x, actual_pos.y, actual_pos.z);
-
-    new_pos.y += -9.8f * Result[id].mass *  _Global[0].time;
-
+    float time = _Global[0].time * 2;
+    float3 sum_forces = float3(0, 0, 0);
     
-    if(new_pos.y <= 0)
+    //Apply Gravity
+    sum_forces.y += -9.8 * Result[id].mass;
+
+    //Calculate force of the particles with this neighbors
+    sum_forces += CalculateParticleForce(id, time);
+    
+    //Advance to the next position
+    Result[id].acc = sum_forces * time;
+    Result[id].vel += Result[id].acc * time;
+    Result[id].pos += Result[id].vel * time;
+
+    CheckCollision(id);
+}
+
+void CheckCollision(uint id)
+{
+    if(Result[id].pos.y < 0.5)
     {
-        new_pos.y += -_Global[0].density * (new_pos.y - actual_pos.y);
+        Result[id].pos.y = -Result[id].pos.y + 2*0.5 + 0.00001f;
+        Result[id].vel.y += -Result[id].vel.y * _Global[0].density;
     }
+
+    if(Result[id].pos.x < -2)
+    {
+        Result[id].vel.x += -Result[id].vel.x * _Global[0].density;
+    }
+
+    if(Result[id].pos.x > 2)
+    {
+        Result[id].vel.x += -Result[id].vel.x * _Global[0].density;
+    }
+
+    if(Result[id].pos.z < -2)
+    {
+        Result[id].vel.z += -Result[id].vel.z * _Global[0].density;
+    }
+
+    if(Result[id].pos.z > 2)
+    {
+        Result[id].vel.z += -Result[id].vel.z * _Global[0].density;
+    }
+}
+
+float3 CalculateParticleForce(uint id, float time)
+{
+    float3 calculated_force = float3(0, 0, 0);
     
-    
-    Result[id].pos = new_pos;
+    for(int i = 0; i < _Global[0].numberOfParticles; ++i)
+    {
+        //Pass if the particle check his self
+        if(id == i) continue;
+
+        float3 p = Result[id].pos;
+        float3 n = Result[i].pos;
+        
+        float dist = distance(p, n);
+        float3 dir = (n - p) / dist;
+
+        // TODO: Put double density relaxation
+        
+        // pow(1 - 1/dist), 2)
+        
+        if(dist < 1.0)
+        {
+            calculated_force += pow(1 - dist/1.0, 3) * dir;
+        }
+
+        //Add spring between two particles
+        calculated_force += pow(time, 2) * 1.4 * (1 - 1.2/1.0) * (1.2 - dist) * dir;
+        
+    }
+
+    return calculated_force;
+}
+
+float distance(float3 v1, float3 v2)
+{
+    return sqrt(pow((v2.x - v1.x), 2) + pow(v2.y - v1.y, 2) + pow(v2.z - v1.z, 2));
 }

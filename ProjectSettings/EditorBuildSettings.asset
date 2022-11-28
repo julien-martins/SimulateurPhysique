@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Fluide.unity
+    guid: 76aaab1c231293b488888c53a5e7f624
   m_configObjects: {}

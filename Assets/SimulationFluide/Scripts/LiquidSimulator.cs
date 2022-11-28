@@ -10,10 +10,13 @@ public struct GlobalVariable
 {
     public float time;
     public float density;
+    public int numberOfParticles;
 }
 
 public struct Particle
 {
+    public Vector3 acc;
+    public Vector3 vel;
     public Vector3 pos;
     public float mass;
 }
@@ -59,10 +62,11 @@ public class LiquidSimulator : MonoBehaviour
         _indexOfKernel = liquidComputeShader.FindKernel("CSMain");
 
         // stride 4 * pos(3)
-        _computeBuffer = new ComputeBuffer(numberOfParticles, 16);
+        _computeBuffer = new ComputeBuffer(numberOfParticles, 40);
 
-        _globalBuffer = new ComputeBuffer(1, 8);
+        _globalBuffer = new ComputeBuffer(1, 12);
         _globalVariable[0].density = density;
+        _globalVariable[0].numberOfParticles = numberOfParticles;
     }
 
     void SpawnSpheres()
@@ -77,14 +81,14 @@ public class LiquidSimulator : MonoBehaviour
             float y = Random.Range(boxSpawner.transform.position.y + boxSpawner.center.y - boxSpawner.size.y/2, boxSpawner.transform.position.y + boxSpawner.center.y + boxSpawner.size.y/2);
             float z = Random.Range(boxSpawner.transform.position.z + boxSpawner.center.z - boxSpawner.size.z/2, boxSpawner.transform.position.z + boxSpawner.center.z + boxSpawner.size.z/2);
 
-            Particle s = new Particle();
-            s.pos.x = x;
-            s.pos.y = y;
-            s.pos.z = z;
+            Particle p = new Particle();
+            p.pos = new Vector3(x, y, z);
+            p.acc = new();
+            p.vel = new();
 
-            s.mass = Random.Range(1, 10);
+            p.mass = Random.Range(0.2f, 1.0f);
             
-            _particles[i] = s;
+            _particles[i] = p;
             
             go.transform.position = new Vector3(x, y, z);
 
@@ -93,15 +97,14 @@ public class LiquidSimulator : MonoBehaviour
     }
     
     // Update is called once per frame
-    void FixedUpdate()
+    void Update()
     {
         _globalVariable[0].time = Time.fixedDeltaTime;
-        _globalVariable[0].time = density;
 
-        _globalBuffer = new ComputeBuffer(1, 8);
+        _globalBuffer = new ComputeBuffer(1, 12);
         _globalBuffer.SetData(_globalVariable);
         
-        _computeBuffer = new ComputeBuffer(numberOfParticles, 16);
+        _computeBuffer = new ComputeBuffer(numberOfParticles, 40);
         _computeBuffer.SetData(_particles);
         
         liquidComputeShader.SetBuffer(_indexOfKernel, "Result", _computeBuffer);
