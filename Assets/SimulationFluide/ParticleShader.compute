@@ -1,19 +1,40 @@
 // Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
-struct Sphere
+struct GlobalVariable
 {
-    float3 pos;
+    float1 time;
+    float1 density;
 };
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-RWStructuredBuffer<Sphere> Result;
+struct Particle
+{
+    float3 pos;
+    float1 mass;
+};
 
-[numthreads(16,16,1)]
+uniform uint numberOfParticles;
+float _TIME;
+StructuredBuffer<Particle> _Particles;
+
+StructuredBuffer<GlobalVariable> _Global;
+
+RWStructuredBuffer<Particle> Result;
+
+[numthreads(128,1,1)]
 void CSMain (uint id : SV_DispatchThreadID)
 {
-    // TODO: insert actual code here!
+    float3 actual_pos = Result[id].pos;
+    float3 new_pos = float3(actual_pos.x, actual_pos.y, actual_pos.z);
 
-    Result[id].pos = float3(0.0f, 42.0f, 0.0f);
+    new_pos.y += -9.8f * Result[id].mass *  _Global[0].time;
+
+    
+    if(new_pos.y <= 0)
+    {
+        new_pos.y += -_Global[0].density * (new_pos.y - actual_pos.y);
+    }
+    
+    
+    Result[id].pos = new_pos;
 }
