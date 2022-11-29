@@ -200,7 +200,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 140493201}
   m_LocalRotation: {x: 0.22276726, y: -0.59764796, z: 0.17769174, w: 0.7494113}
-  m_LocalPosition: {x: 5.9139147, y: 5.646412, z: -2.1991777}
+  m_LocalPosition: {x: 13.19, y: 10.52, z: -3.86}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -421,6 +421,7 @@ MonoBehaviour:
   boxSpawner: {fileID: 1619850436}
   ParticlePrefab: {fileID: 5037722608343971077, guid: 6ca2407e8c59d574289f7c37c7accccf, type: 3}
   density: 1.3
+  stiffness: 1
 --- !u!1 &1521647266
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,6 +6,7 @@ struct GlobalVariable
     float1 time;
     float1 density;
     int numberOfParticles;
+    float1 stiffness;
 };
 
 struct Particle
@@ -14,6 +15,7 @@ struct Particle
     float3 acc;
     float3 pos;
     float1 mass;
+    float1 density;
 };
 
 uniform uint numberOfParticles;
@@ -26,7 +28,13 @@ RWStructuredBuffer<Particle> Result;
 
 void CheckCollision(uint id);
 float3 CalculateParticleForce(uint id, float time);
+
+void double_density_relaxation(uint id);
+void spring_displacement(uint id);
+void spring_adjustement(uint id);
+
 float distance(float3 v1, float3 v2);
+
 
 [numthreads(128,1,1)]
 void CSMain (uint id : SV_DispatchThreadID)
@@ -38,7 +46,12 @@ void CSMain (uint id : SV_DispatchThreadID)
     sum_forces.y += -9.8 * Result[id].mass;
 
     //Calculate force of the particles with this neighbors
-    sum_forces += CalculateParticleForce(id, time);
+    //sum_forces += CalculateParticleForce(id, time);
+
+    double_density_relaxation(id);
+
+    spring_displacement(id);
+    spring_adjustement(id);
     
     //Advance to the next position
     Result[id].acc = sum_forces * time;
@@ -56,31 +69,38 @@ void CheckCollision(uint id)
         Result[id].vel.y += -Result[id].vel.y * _Global[0].density;
     }
 
+    /*
     if(Result[id].pos.x < -2)
     {
+        Result[id].pos.x = -Result[id].pos.x + 2*0.5 + 0.00001f;
         Result[id].vel.x += -Result[id].vel.x * _Global[0].density;
     }
 
     if(Result[id].pos.x > 2)
     {
+        Result[id].pos.x = Result[id].pos.x + 2*0.5 + 0.00001f;
         Result[id].vel.x += -Result[id].vel.x * _Global[0].density;
     }
 
     if(Result[id].pos.z < -2)
     {
+        Result[id].pos.x = -Result[id].pos.x + 2*0.5 + 0.00001f;
         Result[id].vel.z += -Result[id].vel.z * _Global[0].density;
     }
 
     if(Result[id].pos.z > 2)
     {
+        Result[id].pos.x = Result[id].pos.x + 2*0.5 + 0.00001f;
         Result[id].vel.z += -Result[id].vel.z * _Global[0].density;
-    }
+    }*/
+    
 }
 
 float3 CalculateParticleForce(uint id, float time)
 {
     float3 calculated_force = float3(0, 0, 0);
-    
+
+    /* TO REWORK
     for(int i = 0; i < _Global[0].numberOfParticles; ++i)
     {
         //Pass if the particle check his self
@@ -95,18 +115,119 @@ float3 CalculateParticleForce(uint id, float time)
         // TODO: Put double density relaxation
         
         // pow(1 - 1/dist), 2)
-        
-        if(dist < 1.0)
+
+        //If the particle is a neighbor
+        float radius = 1.2;
+        if(dist < radius)
         {
-            calculated_force += pow(1 - dist/1.0, 3) * dir;
+            
+    
+            
+            calculated_force += pow(1 - dist/radius, 3) * dir;
         }
 
         //Add spring between two particles
-        calculated_force += pow(time, 2) * 1.4 * (1 - 1.2/1.0) * (1.2 - dist) * dir;
-        
+        calculated_force += pow(time, 2) * 1.4 * (1 - 1.2/radius) * (1.2 - dist) * dir;
     }
+    */
+    
 
     return calculated_force;
+}
+
+void spring_displacement(uint id)
+{
+    for(int i = 0; i < _Global[0].numberOfParticles; ++i)
+    {
+        //Pass if the particle check if his self
+        if(id == i) continue;
+
+        float3 p = Result[id].pos;
+        float3 n = Result[i].pos;
+
+        float dist = distance(p, n);
+        float radius = 1.2f;
+
+        float rest_length = 0.4;
+        if(dist < radius)
+        {
+            float3 dir = (n - p) / dist;
+            float3 D = pow(_Global[0].time, 2) * 0.4 * (1 - rest_length/radius)*(rest_length - dist)*dir;
+    
+            Result[id].pos -= D/2;
+            Result[i].pos += D/2;
+    
+        }
+    }
+}
+
+void spring_adjustement(uint id)
+{ }
+
+//TODO: optimize the neighbors search
+void double_density_relaxation(uint id)
+{
+    //Check all particles
+    float density = 0;
+    float near_density = 0;
+    
+    for(int i = 0; i < _Global[0].numberOfParticles; ++i)
+    {
+        //Pass if the particle check if his self
+        if(id == i) continue;
+
+        float3 p = Result[id].pos;
+        float3 n = Result[i].pos;
+        
+        float dist = distance(p, n);
+        float radius = 1.2f;
+    
+        //All neighbors && compute density and near density
+        if(dist < radius)
+        {
+            float q = dist / radius;
+            
+            if(q < 1)
+            {
+                density += pow(1 - q, 2);
+                near_density += pow(1 - q, 3);
+            }
+            
+        }
+    }
+    //Compute pressure and near pressure
+    float pressure = _Global[0].stiffness * (density - Result[id].density);
+    float near_pressure = (_Global[0].stiffness - 0.1) * near_density;
+    float dx = 0;
+
+    //Research in all neightbors to apply displacement
+    for(int i = 0; i < _Global[0].numberOfParticles; ++i)
+    {
+        if(id == i) continue;
+
+        float3 p = Result[id].pos;
+        float3 n = Result[i].pos;
+        
+        float dist = distance(p, n);
+        float radius = 1.2f;
+
+        if(dist < radius)
+        {
+            float q = dist /radius;
+            float3 dir = (n - p) / dist;
+            
+            if(q < 1)
+            {
+                //Apply Dispacement
+                float3 D = pow( _Global[0].time, 2) * ( pressure*(1-q) + near_pressure*pow(1-q, 2) ) * dir;
+                Result[i].pos += D/2;
+                dx -= D/2;
+                
+            }
+        }
+    }
+
+    Result[id].pos += dx;
 }
 
 float distance(float3 v1, float3 v2)

@@ -11,6 +11,7 @@ public struct GlobalVariable
     public float time;
     public float density;
     public int numberOfParticles;
+    public float stiffness;
 }
 
 public struct Particle
@@ -19,6 +20,7 @@ public struct Particle
     public Vector3 vel;
     public Vector3 pos;
     public float mass;
+    public float density;
 }
 
 public class LiquidSimulator : MonoBehaviour
@@ -33,7 +35,10 @@ public class LiquidSimulator : MonoBehaviour
 
     public GameObject ParticlePrefab;
     
-    [Header("Fuild Settings")] public float density = 1.0f;
+    [Header("Fuild Settings")] 
+    public float density = 1.0f;
+
+    public float stiffness = 1.0f;
     
     private ComputeBuffer _computeBuffer;
     private ComputeBuffer _globalBuffer;
@@ -62,11 +67,13 @@ public class LiquidSimulator : MonoBehaviour
         _indexOfKernel = liquidComputeShader.FindKernel("CSMain");
 
         // stride 4 * pos(3)
-        _computeBuffer = new ComputeBuffer(numberOfParticles, 40);
+        _computeBuffer = new ComputeBuffer(numberOfParticles, 44);
 
-        _globalBuffer = new ComputeBuffer(1, 12);
+        //Create Global buffer and add all global parameter to the buffer
+        _globalBuffer = new ComputeBuffer(1, 16);
         _globalVariable[0].density = density;
         _globalVariable[0].numberOfParticles = numberOfParticles;
+        _globalVariable[0].stiffness = stiffness;
     }
 
     void SpawnSpheres()
@@ -81,12 +88,13 @@ public class LiquidSimulator : MonoBehaviour
             float y = Random.Range(boxSpawner.transform.position.y + boxSpawner.center.y - boxSpawner.size.y/2, boxSpawner.transform.position.y + boxSpawner.center.y + boxSpawner.size.y/2);
             float z = Random.Range(boxSpawner.transform.position.z + boxSpawner.center.z - boxSpawner.size.z/2, boxSpawner.transform.position.z + boxSpawner.center.z + boxSpawner.size.z/2);
 
+            //Create Particle with this parameter
             Particle p = new Particle();
             p.pos = new Vector3(x, y, z);
             p.acc = new();
             p.vel = new();
-
-            p.mass = Random.Range(0.2f, 1.0f);
+            p.density = Random.Range(0.2f, 0.7f);
+            p.mass = Random.Range(0.5f, 1.5f);
             
             _particles[i] = p;
             
@@ -101,10 +109,10 @@ public class LiquidSimulator : MonoBehaviour
     {
         _globalVariable[0].time = Time.fixedDeltaTime;
 
-        _globalBuffer = new ComputeBuffer(1, 12);
+        _globalBuffer = new ComputeBuffer(1, 16);
         _globalBuffer.SetData(_globalVariable);
         
-        _computeBuffer = new ComputeBuffer(numberOfParticles, 40);
+        _computeBuffer = new ComputeBuffer(numberOfParticles, 44);
         _computeBuffer.SetData(_particles);
         
         liquidComputeShader.SetBuffer(_indexOfKernel, "Result", _computeBuffer);
