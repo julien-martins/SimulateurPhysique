@@ -35,16 +35,16 @@ public class SpatialHash : MonoBehaviour
     {
         GridInitialization();
         
-        //Insert(Vector3.zero, new TestCell());
-        Insert(Vector3.one * 2, new TestCell());
+        Insert(new Vector3(0, 5, 0), new TestCell());
+        //Insert(Vector3.one * 7, new TestCell());
         
         if (!debug) return;
         
-        for (float x = -nbCell; x < nbCell; ++x)
+        for (int x = 0; x < nbCell; ++x)
         {
-            for (float y = -nbCell; y < nbCell; ++y)
+            for (int y = 0; y <= nbCell; ++y)
             {
-                for (float z = -nbCell; z < nbCell; ++z)
+                for (int z = 0; z <= nbCell; ++z)
                 {
                     var cellWorldPos = new Vector3(
                         x * cellSize + cellSize / 2,
@@ -52,14 +52,7 @@ public class SpatialHash : MonoBehaviour
                         z * cellSize + cellSize / 2
                         );
 
-                    var cellGridPos = new Vector3(
-                        x + nbCell,
-                        y + nbCell,
-                        z + nbCell
-                    );
-                    Debug.Log(cellGridPos);
-
-                    if (!IsEmpty((int)cellGridPos.x, (int)cellGridPos.y, (int)cellGridPos.z))
+                    if (!IsEmpty(x, y, z))
                     {
                         Gizmos.color = Color.green;
                         Gizmos.DrawSphere(transform.position + cellWorldPos, 0.6f);
@@ -141,9 +134,9 @@ public class SpatialHash : MonoBehaviour
     private string GetKey(Vector3 pos)
     {
         //Get Cell index of the grid
-        int cellX = (int)(pos.x / cellSize) + (int)(cellSize/2);
-        int cellY = (int)(pos.y / cellSize) + (int)(cellSize/2);
-        int cellZ = (int)(pos.z / cellSize) + (int)(cellSize/2);
+        int cellX = (int)((pos.x - transform.position.x) / cellSize);
+        int cellY = (int)((pos.y - transform.position.y) / cellSize);
+        int cellZ = (int)((pos.z - transform.position.z) / cellSize);
         
         return hash(cellX, cellY, cellZ);
     }
