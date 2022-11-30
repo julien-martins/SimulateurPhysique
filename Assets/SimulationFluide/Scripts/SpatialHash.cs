@@ -19,26 +19,31 @@ public class SpatialHash : MonoBehaviour
      * 
      */
 
+    //use for debbuging the grid 
     struct TestCell
     {
         private Vector3 pos;
     }
     
+    [Header("Debugger")]
     public bool debug = false;
 
-    public float cellSize;
+    public Transform testCell;
+
+    public float cellSize = 1;
     public int nbCell = 2;
 
     private Dictionary<string, List<object>> _cells;
-
+    
     private void OnDrawGizmos()
     {
-        GridInitialization();
-        
-        Insert(new Vector3(0, 5, 0), new TestCell());
-        //Insert(Vector3.one * 7, new TestCell());
-        
         if (!debug) return;
+        
+        if(!Application.isPlaying)
+            GridInitialization();
+
+        if(testCell)
+            Insert(testCell.position, new TestCell());
         
         for (int x = 0; x < nbCell; ++x)
         {
@@ -81,7 +86,6 @@ public class SpatialHash : MonoBehaviour
     public void Insert(Vector3 pos, object cell)
     {
         var key = GetKey(pos);
-        Debug.Log("Insertion key: " + key);
         
         if (!_cells.ContainsKey(key))
             _cells[key] = new List<object>();
@@ -122,7 +126,7 @@ public class SpatialHash : MonoBehaviour
     {
         var key = GetKey(x, y, z);
 
-        List<object> result = new();
+        List<object> result;
         if (_cells.TryGetValue(key, out result))
         {
             return result.Count == 0;
@@ -131,6 +135,11 @@ public class SpatialHash : MonoBehaviour
         return true;
     }
 
+    public void ClearGrid()
+    {
+        _cells.Clear();
+    }
+    
     private string GetKey(Vector3 pos)
     {
         //Get Cell index of the grid

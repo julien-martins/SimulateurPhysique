@@ -114,6 +114,8 @@ public class LiquidSimulator : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        spatialHashRenderer.ClearGrid();
+        
         _globalVariable[0].time = Time.fixedDeltaTime;
 
         _globalBuffer = new ComputeBuffer(1, 16);
@@ -141,6 +143,8 @@ public class LiquidSimulator : MonoBehaviour
             newPos.x = _particles[i].pos.x;
             newPos.y = _particles[i].pos.y;
             newPos.z = _particles[i].pos.z;
+            
+            spatialHashRenderer.Insert(newPos, _particles[i]);
             
             _particlesObject[i].transform.position = newPos;
         }
