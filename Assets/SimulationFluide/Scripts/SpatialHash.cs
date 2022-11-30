@@ -18,6 +18,140 @@ public class SpatialHash : MonoBehaviour
      * grid.RemoveClient(client);
      * 
      */
+
+    struct TestCell
+    {
+        private Vector3 pos;
+    }
+    
+    public bool debug = false;
+
+    public float cellSize;
+    public int nbCell = 2;
+
+    private Dictionary<string, List<object>> _cells;
+
+    private void OnDrawGizmos()
+    {
+        GridInitialization();
+        
+        //Insert(Vector3.zero, new TestCell());
+        Insert(Vector3.one * 2, new TestCell());
+        
+        if (!debug) return;
+        
+        for (float x = -nbCell; x < nbCell; ++x)
+        {
+            for (float y = -nbCell; y < nbCell; ++y)
+            {
+                for (float z = -nbCell; z < nbCell; ++z)
+                {
+                    var cellWorldPos = new Vector3(
+                        x * cellSize + cellSize / 2,
+                        y * cellSize + cellSize / 2,
+                        z * cellSize + cellSize / 2
+                        );
+
+                    var cellGridPos = new Vector3(
+                        x + nbCell,
+                        y + nbCell,
+                        z + nbCell
+                    );
+                    Debug.Log(cellGridPos);
+
+                    if (!IsEmpty((int)cellGridPos.x, (int)cellGridPos.y, (int)cellGridPos.z))
+                    {
+                        Gizmos.color = Color.green;
+                        Gizmos.DrawSphere(transform.position + cellWorldPos, 0.6f);
+                    }
+
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireCube(transform.position + cellWorldPos, Vector3.one * cellSize);
+                }
+            }
+        }
+        
+        
+
+    }
+
+    public void Awake()
+    {
+        GridInitialization();
+    }
+
+    public void GridInitialization()
+    {
+        _cells = new ();
+    }
+    
+    public void Insert(Vector3 pos, object cell)
+    {
+        var key = GetKey(pos);
+        Debug.Log("Insertion key: " + key);
+        
+        if (!_cells.ContainsKey(key))
+            _cells[key] = new List<object>();
+
+        _cells[key].Add(cell);
+    }
+
+    public List<object> GetCell(Vector3 pos)
+    {
+        var key = GetKey(pos);
+
+        if (_cells.ContainsKey(key))
+            return _cells[key];
+        
+        return new();
+    }
+    
+    //Find all neighbors with a given position 
+    public void FindNearby()
+    {
+        
+    }
+
+    public bool IsEmpty(Vector3 pos)
+    {
+        var key = GetKey(pos);
+
+        List<object> result = new();
+        if (_cells.TryGetValue(key, out result))
+        {
+            return result.Count == 0;
+        }
+        
+        return true;
+    }
+    
+    public bool IsEmpty(int x, int y, int z)
+    {
+        var key = GetKey(x, y, z);
+
+        List<object> result = new();
+        if (_cells.TryGetValue(key, out result))
+        {
+            return result.Count == 0;
+        }
+        
+        return true;
+    }
+
+    private string GetKey(Vector3 pos)
+    {
+        //Get Cell index of the grid
+        int cellX = (int)(pos.x / cellSize) + (int)(cellSize/2);
+        int cellY = (int)(pos.y / cellSize) + (int)(cellSize/2);
+        int cellZ = (int)(pos.z / cellSize) + (int)(cellSize/2);
+        
+        return hash(cellX, cellY, cellZ);
+    }
+
+    private string GetKey(int x, int y, int z)
+    {
+        return hash(x, y, z);
+    }
     
     /* Hash Function
      * hash(x, y, z) = (x * p1 xor x * p2 xor z * p3) mod n
@@ -28,39 +162,10 @@ public class SpatialHash : MonoBehaviour
      * p2 = 19349663
      * p3 = 83492791
      */
-
-    public bool debug = false;
-
-    public float cellSize;
-    public int nbCell = 2;
+    string hash(int x, int y, int z)
+    {
+        //return (int)((x * 73856093 ^ y * 19349663 ^ z * 83492791) % (float)(Math.Pow(cellSize*2, 3)));
+        return $"{x}/{y}/{z}";
+    }
     
-    private void OnDrawGizmos()
-    {
-        if (!debug) return;
-        
-        for (float x = -nbCell; x < nbCell; ++x)
-        {
-            for (float y = -nbCell; y < nbCell; ++y)
-            {
-                for (float z = -nbCell; z < nbCell; ++z)
-                {
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawWireCube(transform.position + new Vector3(x * cellSize + cellSize / 2, y * cellSize + cellSize / 2, z * cellSize + cellSize / 2), Vector3.one * cellSize);
-                }
-            }
-        }
-
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

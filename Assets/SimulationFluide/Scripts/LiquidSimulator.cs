@@ -39,6 +39,10 @@ public class LiquidSimulator : MonoBehaviour
     public float density = 1.0f;
 
     public float stiffness = 1.0f;
+
+    [Header("Optimisation")] 
+    public SpatialHash spatialHashRenderer;
+    public SpatialHash spatialHashNeighbors;
     
     private ComputeBuffer _computeBuffer;
     private ComputeBuffer _globalBuffer;
@@ -95,6 +99,9 @@ public class LiquidSimulator : MonoBehaviour
             p.vel = new();
             p.density = Random.Range(0.2f, 0.7f);
             p.mass = Random.Range(0.5f, 1.5f);
+            
+            
+            spatialHashRenderer.Insert(p.pos, p);
             
             _particles[i] = p;
             
