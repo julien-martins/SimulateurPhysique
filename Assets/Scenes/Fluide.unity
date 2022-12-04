@@ -274,7 +274,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 86cb5cc0a977d2f4ba1702edee3cfe30, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -416,12 +416,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2485e0874b0e0c541936f4368be1a611, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  numberOfParticles: 10000
+  numberOfParticles: 8000
   liquidComputeShader: {fileID: 7200000, guid: 2aa0e00128a63fb4bb9a11a66cb59851, type: 3}
   boxSpawner: {fileID: 1619850436}
   ParticlePrefab: {fileID: 5037722608343971077, guid: 6ca2407e8c59d574289f7c37c7accccf, type: 3}
-  density: 1.3
-  stiffness: 1
+  density: 1
+  stiffness: 0.8
+  WaterMaterial: {fileID: 2100000, guid: ce6673ddf0f354144a3ef1bbf29fd204, type: 2}
+  SmoothNormals: 0
   spatialHashRenderer: {fileID: 2039490110}
   spatialHashNeighbors: {fileID: 0}
 --- !u!1 &1521647266
@@ -543,7 +545,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1619850434}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.2, y: 5.26, z: -2.2}
+  m_LocalPosition: {x: -1.2, y: 8.93, z: -2.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -561,8 +563,8 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 0
   serializedVersion: 2
-  m_Size: {x: 2.5888107, y: 11.799347, z: 2.3243418}
-  m_Center: {x: 0.57481563, y: 5.5556087, z: 2.1279345}
+  m_Size: {x: 18.696747, y: 6.680911, z: 17.258179}
+  m_Center: {x: 2.7342434, y: 2.9963908, z: 4.392414}
 --- !u!1 &1730678698
 GameObject:
   m_ObjectHideFlags: 0
@@ -587,8 +589,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1730678698}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: 0, y: -1.13, z: 0}
+  m_LocalScale: {x: 4.5440826, y: 4.5440826, z: 4.5440826}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 231007344}
@@ -624,10 +626,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1377cde1372797b41b64b452280d2628, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debug: 1
+  debug: 0
   testCell: {fileID: 0}
-  cellSize: 3
-  nbCell: 10
+  cellSize: 1
+  nbCell: 30
+  FlipNormals: 1
 --- !u!4 &2039490111
 Transform:
   m_ObjectHideFlags: 0
@@ -636,7 +639,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2039490109}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -14.27, y: -11.56, z: -18.3}
+  m_LocalPosition: {x: -16.62, y: -5.42, z: -14.52}
   m_LocalScale: {x: 10, y: 10, z: 10}
   m_ConstrainProportionsScale: 0
   m_Children: []

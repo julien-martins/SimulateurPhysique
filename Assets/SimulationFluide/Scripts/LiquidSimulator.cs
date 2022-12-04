@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Random = UnityEngine.Random;
 
 public struct GlobalVariable
@@ -40,12 +41,17 @@ public class LiquidSimulator : MonoBehaviour
 
     public float stiffness = 1.0f;
 
+    [Header("Render Settings")] 
+    public Material WaterMaterial;
+    public bool SmoothNormals = false;
+
     [Header("Optimisation")] 
     public SpatialHash spatialHashRenderer;
     public SpatialHash spatialHashNeighbors;
     
     private ComputeBuffer _computeBuffer;
     private ComputeBuffer _globalBuffer;
+
     
     // ###### PRIVATE FIELD ######
     
@@ -58,9 +64,18 @@ public class LiquidSimulator : MonoBehaviour
     private Particle[] _particles;
 
     private GameObject[] _particlesObject;
+
+    //Rendering Method
+    private MarchingCube _marchingCube;
+
+    private List<GameObject> meshes = new();
+
+    private MeshFilter _meshFilter;
     
     void Start()
     {
+        _marchingCube = new MarchingCube(0.0f);
+        
         _globalVariable = new GlobalVariable[1];
         
         _particles = new Particle[numberOfParticles];
@@ -78,6 +93,14 @@ public class LiquidSimulator : MonoBehaviour
         _globalVariable[0].density = density;
         _globalVariable[0].numberOfParticles = numberOfParticles;
         _globalVariable[0].stiffness = stiffness;
+        
+        //For the rendering
+        GameObject go = new GameObject("Mesh");
+        go.transform.parent = transform;
+        _meshFilter = go.AddComponent<MeshFilter>();
+        var renderer = go.AddComponent<MeshRenderer>();
+        renderer.material = WaterMaterial;
+
     }
 
     void SpawnSpheres()
@@ -98,8 +121,7 @@ public class LiquidSimulator : MonoBehaviour
             p.acc = new();
             p.vel = new();
             p.density = Random.Range(0.2f, 0.7f);
-            p.mass = Random.Range(0.5f, 1.5f);
-            
+            p.mass = Random.Range(1.0f, 3.0f);
             
             spatialHashRenderer.Insert(p.pos, p);
             
@@ -112,7 +134,7 @@ public class LiquidSimulator : MonoBehaviour
     }
     
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         spatialHashRenderer.ClearGrid();
         
@@ -129,12 +151,11 @@ public class LiquidSimulator : MonoBehaviour
         liquidComputeShader.SetBuffer(_indexOfKernel, "_Particles", _computeBuffer);
         liquidComputeShader.SetBuffer(_indexOfKernel, "_Global", _globalBuffer);
         
-        liquidComputeShader.SetFloat( "_Time", Time.fixedTime);
+        liquidComputeShader.SetFloat( "_Time", Time.fixedDeltaTime);
         
         liquidComputeShader.Dispatch(_indexOfKernel, 1024, 1, 1);
 
         _computeBuffer.GetData(_particles);
-        _computeBuffer.Release();
 
         //Change the position of gameobject
         for (int i = 0; i < numberOfParticles; ++i)
@@ -148,5 +169,60 @@ public class LiquidSimulator : MonoBehaviour
             
             _particlesObject[i].transform.position = newPos;
         }
+
+        GenerateLiquidMesh();
     }
+
+    void GenerateLiquidMesh()
+    {
+        meshes.Clear();
+        
+        var verts = new List<Vector3>();
+        var normals = new List<Vector3>();
+        var indices = new List<int>();
+
+        _marchingCube.Generate(spatialHashRenderer.GetGridValues(), verts, indices);
+        
+        //create the normals
+        if (SmoothNormals)
+        {
+            for (int i = 0; i < verts.Count; i++)
+            {
+                //Presumes the vertex is in local space where
+                //the min value is 0 and max is width/height/depth.
+                Vector3 p = verts[i];
+
+                float u = p.x / (spatialHashRenderer.nbCell - 1.0f);
+                float v = p.y / (spatialHashRenderer.nbCell - 1.0f);
+                float w = p.z / (spatialHashRenderer.nbCell - 1.0f);
+
+                Vector3 n = spatialHashRenderer.GetNormal(u, v, w);
+
+                normals.Add(n);
+            }
+            
+        }
+
+        var position = Vector3.zero;
+
+        CreateMesh(verts, normals, indices, position);
+    }
+
+    void CreateMesh(List<Vector3> verts, List<Vector3> normals, List<int> indices, Vector3 position)
+    {
+        Mesh mesh = new Mesh();
+        mesh.indexFormat = IndexFormat.UInt32;
+        mesh.SetVertices(verts);
+        mesh.SetTriangles(indices, 0);
+        
+        if(normals.Count > 0) mesh.SetNormals(normals); else mesh.RecalculateNormals();
+
+        mesh.RecalculateBounds();
+
+        _meshFilter.mesh = mesh;
+        _meshFilter.gameObject.transform.localPosition = position;
+
+        //meshes.Add(_meshFilter.gameObject);
+    }
+    
 }

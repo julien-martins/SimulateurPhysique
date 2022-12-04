@@ -32,6 +32,7 @@ public class SpatialHash : MonoBehaviour
 
     public float cellSize = 1;
     public int nbCell = 2;
+    public bool FlipNormals = false;
 
     private Dictionary<string, List<object>> _cells;
     
@@ -68,7 +69,6 @@ public class SpatialHash : MonoBehaviour
                 }
             }
         }
-        
         
 
     }
@@ -139,6 +139,88 @@ public class SpatialHash : MonoBehaviour
     {
         _cells.Clear();
     }
+
+    public float[,,] GetGridValues()
+    {
+        var result = new float[nbCell, nbCell, nbCell];
+
+        int x, y, z;
+        for (x = 0; x < nbCell; ++x)
+        {
+            for (y = 0; y < nbCell; ++y)
+            {
+                for (z = 0; z < nbCell; ++z)
+                {
+                    result[x, y, z] = IsEmpty(x, y, z) ? 0 : 1;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public Vector3 GetNormal(float u, float v, float w)
+    {
+        var n = GetFirstDerivative(u, v, w);
+
+        if (FlipNormals)
+            return n.normalized * -1;
+        else
+            return n.normalized;
+    }
+
+    public Vector3 GetFirstDerivative(float u, float v, float w)
+    {
+        const float h = 0.005f;
+        const float hh = h * 0.5f;
+        const float ih = 1.0f / h;
+
+        float dx_p1 = GetCell(u + hh, v, w);
+        float dy_p1 = GetCell(u, v + hh, w);
+        float dz_p1 = GetCell(u, v, w + hh);
+
+        float dx_m1 = GetCell(u - hh, v, w);
+        float dy_m1 = GetCell(u, v - hh, w);
+        float dz_m1 = GetCell(u, v, w - hh);
+
+        float dx = (dx_p1 - dx_m1) * ih;
+        float dy = (dy_p1 - dy_m1) * ih;
+        float dz = (dz_p1 - dz_m1) * ih;
+
+        return new Vector3(dx, dy, dz);
+    }
+
+    public float GetCell(float u, float v, float w)
+    {
+        float x = u * (nbCell - 1);
+        float y = v * (nbCell - 1);
+        float z = w * (nbCell - 1);
+
+        int xi = (int)Mathf.Floor(x);
+        int yi = (int)Mathf.Floor(y);
+        int zi = (int)Mathf.Floor(z);
+
+        float v000 = IsEmpty(xi, yi, zi) ? 0 : 1;
+        float v100 = IsEmpty(xi + 1, yi, zi) ? 0 : 1;
+        float v010 = IsEmpty(xi, yi + 1, zi) ? 0 : 1;
+        float v110 = IsEmpty(xi + 1, yi + 1, zi) ? 0 : 1;
+
+        float v001 = IsEmpty(xi, yi, zi + 1) ? 0 : 1;
+        float v101 = IsEmpty(xi + 1, yi, zi + 1) ? 0 : 1;
+        float v011 = IsEmpty(xi, yi + 1, zi + 1) ? 0 : 1;
+        float v111 = IsEmpty(xi + 1, yi + 1, zi + 1) ? 0 : 1;
+
+        float tx = Mathf.Clamp01(x - xi);
+        float ty = Mathf.Clamp01(y - yi);
+        float tz = Mathf.Clamp01(z - zi);
+
+        //use bilinear interpolation the find these values.
+        float v0 = BLerp(v000, v100, v010, v110, tx, ty);
+        float v1 = BLerp(v001, v101, v011, v111, tx, ty);
+
+        //Now lerp those values for the final trilinear interpolation.
+        return Lerp(v0, v1, tz);
+    }
     
     private string GetKey(Vector3 pos)
     {
@@ -168,6 +250,16 @@ public class SpatialHash : MonoBehaviour
     {
         //return (int)((x * 73856093 ^ y * 19349663 ^ z * 83492791) % (float)(Math.Pow(cellSize*2, 3)));
         return $"{x}/{y}/{z}";
+    }
+    
+    private static float Lerp(float v0, float v1, float t)
+    {
+        return v0 + (v1 - v0) * t;
+    }
+    
+    private static float BLerp(float v00, float v10, float v01, float v11, float tx, float ty)
+    {
+        return Lerp(Lerp(v00, v10, tx), Lerp(v01, v11, tx), ty);
     }
     
 }
