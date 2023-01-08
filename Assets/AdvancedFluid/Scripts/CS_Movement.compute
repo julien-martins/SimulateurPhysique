@@ -1,0 +1,33 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+
+struct MeshProperties
+{
+    float4x4 mat;
+};
+
+RWStructuredBuffer<MeshProperties> _Properties;
+float3 _PusherPosition;
+
+[numthreads(64,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float4x4 mat = _Properties[id.x].mat;
+    float3 position = float3(mat[0][3], mat[1][3], mat[2][3]);
+
+    int val = 0;
+    if(position.y > 0) val = 1;
+    
+    float4x4 trans = float4x4(
+        1, 0, 0, 0,
+        0, 1, 0, -val,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+    
+    _Properties[id.x].mat = mul(trans, _Properties[id.x].mat);
+}
